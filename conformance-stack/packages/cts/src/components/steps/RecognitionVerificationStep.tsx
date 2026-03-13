@@ -146,10 +146,10 @@ export function RecognitionVerificationStep({ context, controller }: Recognition
                             type="text"
                             value={authorityInput}
                             onChange={(e) => setAuthorityInput(e.target.value)}
-                            placeholder="[member-of] ayratrustnetwork"
+                            placeholder="did:webvh:ayra.forum"
                             className="w-full border border-gray-300 p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
-                        <p className="mt-1 text-xs text-gray-500">Authority/recognition type identifier.</p>
+                        <p className="mt-1 text-xs text-gray-500">Authority DID or identifier for the recognition policy.</p>
                     </div>
 
                     <div>
@@ -161,7 +161,7 @@ export function RecognitionVerificationStep({ context, controller }: Recognition
                             type="text"
                             value={actionInput}
                             onChange={(e) => setActionInput(e.target.value)}
-                            placeholder="recognize"
+                            placeholder="member-of"
                             className="w-full border border-gray-300 p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                         <p className="mt-1 text-xs text-gray-500">Action to evaluate (e.g., recognize, member-of).</p>
@@ -176,10 +176,10 @@ export function RecognitionVerificationStep({ context, controller }: Recognition
                             type="text"
                             value={resourceInput}
                             onChange={(e) => setResourceInput(e.target.value)}
-                            placeholder="did:web:target"
+                            placeholder="ayratrustnetwork"
                             className="w-full border border-gray-300 p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
-                        <p className="mt-1 text-xs text-gray-500">The ecosystem or EGF that should be recognized.</p>
+                        <p className="mt-1 text-xs text-gray-500">Recognition resource or trust network identifier being checked.</p>
                     </div>
 
                     <div>

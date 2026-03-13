@@ -171,7 +171,7 @@ Credo is currently used for demo purposes and supports AnonCreds. Moving Credo t
 
 ## 16. How does CTS handle DIDComm 2 vs OID4VC for Holders?
 
-The certification-simple holder flow uses **DIDComm v2 Present Proof v2** only. OID4VC holder tests are **not** part of this flow, but are potentially on the roadmap.
+The conformance-stack holder flow uses **DIDComm v2 Present Proof v2** only. OID4VC holder tests are **not** part of this flow, but are potentially on the roadmap.
 
 ---
 

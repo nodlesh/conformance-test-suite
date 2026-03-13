@@ -7,13 +7,13 @@ Guidelines for using NGROK with the Certification Simple docker-compose stack. C
 - NGROK account (free or paid) – <https://dashboard.ngrok.com/signup>
 - NGROK authtoken – <https://dashboard.ngrok.com/get-started/your-authtoken>
 
-All commands assume you run them from the repository root while targeting the `certification-simple` folder.
+All commands assume you run them from the repository root while targeting the `conformance-stack` folder.
 
 ## 2. Store Your Authtoken
 
-The compose stack reads environment values from `certification-simple/.env`. Populate that file with at least the NGROK credentials:
+The compose stack reads environment values from `conformance-stack/.env`. Populate that file with at least the NGROK credentials:
 
-`certification-simple/.env`
+`conformance-stack/.env`
 ```ini
 NGROK_AUTH_TOKEN=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 NGROK_REGION=us
@@ -26,7 +26,7 @@ You can still override values for a single terminal session (`export NGROK_AUTH_
 Free NGROK accounts are limited to one active tunnel. Alternate between issuer and verifier tunnels by editing the `.env` file and restarting the services.
 
 ### 3.1 Issuer phase
-Set `certification-simple/.env` so only the server uses NGROK:
+Set `conformance-stack/.env` so only the server uses NGROK:
 
 ```ini
 USE_NGROK=true
@@ -37,7 +37,7 @@ NGROK_REGION=us
 
 Start the issuer stack:
 ```bash
-cd certification-simple
+cd conformance-stack
 docker compose up --build server ui
 ```
 
@@ -50,7 +50,7 @@ docker compose down
 ```
 
 ### 3.2 Verifier phase
-Adjust `certification-simple/.env` so only the verifier agent opens a tunnel:
+Adjust `conformance-stack/.env` so only the verifier agent opens a tunnel:
 
 ```ini
 USE_NGROK=false
@@ -61,7 +61,7 @@ NGROK_REGION=us
 
 Run the verifier together with the server dependency:
 ```bash
-cd certification-simple
+cd conformance-stack
 docker compose up --build server test-verifier
 ```
 
@@ -78,7 +78,7 @@ Repeat the cycle whenever you need a new tunnel. Free-plan hostnames change ever
 Paid NGROK plans support multiple simultaneous tunnels and reserved domains. Configure both services with dedicated hostnames so URLs remain stable across restarts.
 
 1. Reserve dedicated domains in the NGROK dashboard, e.g. `reference.your-org.ngrok.app` for the reference agent tunnel and `verifier.your-org.ngrok.app` for the standalone verifier test container. If you plan to force the issuer override to Credo, reserve a third domain (e.g. `issuer.your-org.ngrok.app`) for that tunnel.
-2. Update `certification-simple/.env`:
+2. Update `conformance-stack/.env`:
 
 ```ini
 USE_NGROK=true
@@ -94,7 +94,7 @@ NGROK_POOLING_ENABLED=false
 
 3. Start all services and leave them running through issue and holder test flows:
 ```bash
-cd certification-simple
+cd conformance-stack
 docker compose up --build
 ```
 
@@ -105,7 +105,7 @@ docker compose down
 
 Both tunnels retain their reserved domains, keeping QR codes and webhook targets valid across restarts.
 
-## 5. Key Environment Variables (`certification-simple/.env`)
+## 5. Key Environment Variables (`conformance-stack/.env`)
 
 | Variable | Purpose |
 |----------|---------|
@@ -123,7 +123,7 @@ Both tunnels retain their reserved domains, keeping QR codes and webhook targets
 
 ## 6. Troubleshooting
 
-- **`NGROK_AUTH_TOKEN not defined`** – confirm the token exists in `certification-simple/.env` or in exported shell variables before running `docker compose up`.
+- **`NGROK_AUTH_TOKEN not defined`** – confirm the token exists in `conformance-stack/.env` or in exported shell variables before running `docker compose up`.
 - **`ERR_NGROK_334` (duplicate tunnel)** – stop all services with `docker compose down`, ensure only one tunnel is enabled on the free plan, or disable pooling for paid plans.
 - **Tunnel closes immediately** – verify your plan level supports the requested domain (free plans cannot attach custom `*.ngrok.app` hostnames).
 - **Wallet cannot reach verifier** – confirm devices use the tunnel URL shown in the logs and that outbound HTTPS is allowed on the network.

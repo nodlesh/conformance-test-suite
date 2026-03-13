@@ -4,10 +4,10 @@ const fs = require("fs");
 const path = require("path");
 
 const projectRoot = path.resolve(__dirname, "..");
-const nextEnvPath = path.join(projectRoot, "certification-simple", "packages", "cts", ".env.local");
+const nextEnvPath = path.join(projectRoot, "conformance-stack", "packages", "cts", ".env.local");
 const sourceEnvFiles = [
   path.join(projectRoot, ".env"),
-  path.join(projectRoot, "certification-simple", ".env")
+  path.join(projectRoot, "conformance-stack", ".env")
 ];
 
 const parseEnvFile = (filePath) => {

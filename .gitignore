@@ -23,7 +23,11 @@
 
 # misc
 .DS_Store
+.vscode/
 *.pem
+/plans/EXECPLAN-*.md
+/conformance-stack/logs/
+/conformance-stack/issues/ACAPY_ISSUE_DRAFT.md
 
 # debug
 npm-debug.log*

@@ -19,7 +19,7 @@ acapy-control/
 ## Running locally
 
 ```bash
-cd certification-simple/services/acapy-control
+cd conformance-stack/services/acapy-control
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt

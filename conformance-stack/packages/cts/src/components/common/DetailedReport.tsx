@@ -69,6 +69,11 @@ export function DetailedReport({
 }: DetailedReportProps) {
   const [showFullReport, setShowFullReport] = useState(false);
   const isVerifierReport = testType.toLowerCase().includes("verifier");
+  const exportFileNameBase =
+    testType
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "test";
 
   const formatTimestamp = (timestamp: string) => {
     return new Date(timestamp).toLocaleString();
@@ -504,7 +509,7 @@ export function DetailedReport({
                   const url = URL.createObjectURL(blob);
                   const a = document.createElement('a');
                   a.href = url;
-                  a.download = `${testType.toLowerCase()}-test-report-${new Date().toISOString().split('T')[0]}.json`;
+                  a.download = `${exportFileNameBase}-test-report-${new Date().toISOString().split('T')[0]}.json`;
                   document.body.appendChild(a);
                   a.click();
                   document.body.removeChild(a);

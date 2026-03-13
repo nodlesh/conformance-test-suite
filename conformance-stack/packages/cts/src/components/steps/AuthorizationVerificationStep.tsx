@@ -118,7 +118,7 @@ export function AuthorizationVerificationStep({ context, controller }: Authoriza
             <div className="mb-6">
                 <h4 className="text-lg font-semibold mb-2">Authorization Inputs</h4>
                 <p className="text-sm text-gray-600 mb-4">
-                    Copy the entity DID and authorization identifier directly from the Trust Registry admin UI, then run the verification.
+                    Provide the TRQP authorization payload values, then run the verification.
                 </p>
 
                 <div className="space-y-4">
@@ -131,10 +131,10 @@ export function AuthorizationVerificationStep({ context, controller }: Authoriza
                             type="text"
                             value={entityInput}
                             onChange={(e) => setEntityInput(e.target.value)}
-                            placeholder="did:web:example"
+                            placeholder="did:web:ayra-cts-issuer.ngrok.app:issuer"
                             className="w-full border border-gray-300 p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
-                        <p className="mt-1 text-xs text-gray-500">Use the DID or identifier registered in the Trust Registry.</p>
+                        <p className="mt-1 text-xs text-gray-500">Entity DID or identifier being checked for authorization.</p>
                     </div>
 
                     <div>
@@ -146,10 +146,10 @@ export function AuthorizationVerificationStep({ context, controller }: Authoriza
                             type="text"
                             value={authorityInput}
                             onChange={(e) => setAuthorityInput(e.target.value)}
-                            placeholder="[root] ayracard"
+                            placeholder="did:web:sandbox.ayra.network"
                             className="w-full border border-gray-300 p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
-                        <p className="mt-1 text-xs text-gray-500">Authority identifier from the registry.</p>
+                        <p className="mt-1 text-xs text-gray-500">Authority DID or identifier that defines the authorization policy.</p>
                     </div>
 
                     <div>

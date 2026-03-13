@@ -1,6 +1,6 @@
 # Ayra Trust Network - Conformance Test Suite
 
-Conformance tooling for Ayra Trust Network implementations built on the `certification-simple` stack (the production baseline).
+Conformance tooling for Ayra Trust Network implementations built on the `conformance-stack` stack (the production baseline).
 
 **Current coverage**
 - ✅ TRQP trust registry checks
@@ -12,17 +12,17 @@ Conformance tooling for Ayra Trust Network implementations built on the `certifi
 
 ## Overview
 
-This repository contains conformance testing tools for validating digital identity implementations against Ayra Trust Network standards, focused on the `certification-simple` stack.
+This repository contains conformance testing tools for validating digital identity implementations against Ayra Trust Network standards, focused on the `conformance-stack` stack.
 
 ## Repository Structure
 
 ```
 conformance-test-suite/
-├── certification-simple/          # Primary CTS stack (Next.js + Express)
+├── conformance-stack/          # Primary CTS stack (Next.js + Express)
 └── README.md                     # This file
 ```
 
-## Certification-Simple Stack
+## Conformance Stack
 
 **Architecture**: Monolithic Next.js application with integrated testing and Express API.
 
@@ -49,7 +49,7 @@ conformance-test-suite/
 - pnpm 9.1.0+
 - Docker & Docker Compose (recommended)
 
-### Quick Start (Certification-Simple)
+### Quick Start (Conformance Stack)
 
 1) Clone and configure env
 ```bash
@@ -92,7 +92,7 @@ CTS_ISSUER_DID_OPTIONS={"did":"did:web:your.domain:issuer"} # Required when CTS_
 DID_WEB_NGROK_DOMAIN=issuer.example.ngrok.app          # Public domain for hosting the DID document
 ```
 
-For NGROK domain planning, tunnel rotation, and the full list of optional variables see `certification-simple/NGROK_SETUP.md`.
+For NGROK domain planning, tunnel rotation, and the full list of optional variables see `conformance-stack/NGROK_SETUP.md`.
 
 ### Reference Agents & Issuer Override
 
@@ -157,6 +157,12 @@ When issuing W3C LDP credentials with a `did:web` issuer, the DID document must 
 COMPOSE_PROFILES=with-ngrok docker compose up --build app ngrok acapy-control acapy-holder-control acapy-verifier-control
 ```
 
+When finished, tear it down with the same profile so the profile-scoped `ngrok` service is removed too:
+
+```bash
+COMPOSE_PROFILES=with-ngrok docker compose down -v
+```
+
 The DID document is served by the CTS API (default `https://<domain>/issuer/did.json`) and is generated automatically on container start when `CTS_ISSUER_DID_METHOD` is `web` or `webvh`.
 
 ### Access Points (default ports)
@@ -208,7 +214,7 @@ Licensed under the Apache License 2.0. See [LICENSE](./LICENSE) for details.
 ## Support and Feedback
 
 ### Getting Help
-- 📚 **Documentation**: Check README files under `certification-simple/`
+- 📚 **Documentation**: Check README files under `conformance-stack/`
 - 🐛 **Issues**: Report bugs and issues via GitHub Issues
 - 💬 **Discussions**: Use GitHub Discussions for questions and feedback
 

@@ -8,7 +8,7 @@ services:
       - ./:/workspaces/conformance-test-suite:cached
       - pnpm-store:/pnpm
       - node-modules:/workspaces/conformance-test-suite/node_modules
-    working_dir: /workspaces/conformance-test-suite/certification-simple
+    working_dir: /workspaces/conformance-test-suite/conformance-stack
     #command: bash -lc "corepack enable && pnpm install && pnpm run dev"
     command: "sleep infinity"
     environment:
@@ -59,7 +59,7 @@ services:
       - ./:/workspaces/conformance-test-suite:cached
       - pnpm-store:/pnpm
       - node-modules:/workspaces/conformance-test-suite/node_modules
-    working_dir: /workspaces/conformance-test-suite/certification-simple
+    working_dir: /workspaces/conformance-test-suite/conformance-stack
     command: >
       bash -lc '
         set -euo pipefail
@@ -138,10 +138,10 @@ services:
 
   acapy-control:
     build:
-      context: ./certification-simple/services/acapy-control
+      context: ./conformance-stack/services/acapy-control
     volumes:
       # TEMP: expose local Ayra context until hosted at a stable URL
-      - ./certification-simple/packages/cts/schema:/app/schema:ro
+      - ./conformance-stack/packages/cts/schema:/app/schema:ro
     ports:
       - "9001:9001"
       - "8041:8041"
@@ -180,10 +180,10 @@ services:
 
   acapy-holder-control:
     build:
-      context: ./certification-simple/services/acapy-control
+      context: ./conformance-stack/services/acapy-control
     volumes:
       # TEMP: expose local Ayra context until hosted at a stable URL
-      - ./certification-simple/packages/cts/schema:/app/schema:ro
+      - ./conformance-stack/packages/cts/schema:/app/schema:ro
     ports:
       - "9003:9003"
       - "8043:8043"
@@ -217,10 +217,10 @@ services:
 
   acapy-verifier-control:
     build:
-      context: ./certification-simple/services/acapy-control
+      context: ./conformance-stack/services/acapy-control
     volumes:
       # TEMP: expose local Ayra context until hosted at a stable URL
-      - ./certification-simple/packages/cts/schema:/app/schema:ro
+      - ./conformance-stack/packages/cts/schema:/app/schema:ro
     ports:
       - "9010:9010"
       - "8142:8042"
@@ -280,7 +280,6 @@ services:
   # Optional sidecar if you want ngrok in a container (otherwise the app can open its own tunnel)
   ngrok:
     image: ngrok/ngrok:alpine
-    restart: unless-stopped
     environment:
       NGROK_AUTHTOKEN: ${NGROK_AUTH_TOKEN}
       DID_WEB_NGROK_DOMAIN: ${DID_WEB_NGROK_DOMAIN:-}

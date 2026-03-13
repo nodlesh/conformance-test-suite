@@ -16,7 +16,7 @@
 - CTS waits tolerate a short grace window when records momentarily disappear and logs structured state snapshots.
 
 ## Repro Script
-Use `certification-simple/services/acapy-control/scripts/simulate-duplicate-proof-webhook.sh` to post duplicate webhook payloads and confirm that the control service ignores the duplicate.
+Use `conformance-stack/services/acapy-control/scripts/simulate-duplicate-proof-webhook.sh` to post duplicate webhook payloads and confirm that the control service ignores the duplicate.
 
 ## ACA-Py DIF Schema Crash (Issue #4006)
 - ACA-Py present-proof v2 DIF handler throws `AttributeError: 'NoneType' object has no attribute 'uri_groups'` if `input_descriptors[].schema` is omitted.

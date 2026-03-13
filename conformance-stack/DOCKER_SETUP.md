@@ -114,7 +114,7 @@ The test-verifier service supports these configurations:
 ### ✅ **File Structure**
 
 ```
-certification-simple/
+conformance-stack/
 ├── docker-compose.yml              # Main compose file
 ├── docker-compose.extended.yml     # Extended with all test services
 ├── docker-compose.README.md        # Detailed documentation

@@ -26,7 +26,7 @@ The CTS package contains a complete testing environment with:
 
 ## 🏗️ Repository Architecture Overview
 
-This package is the Certification-Simple stack: a monolithic Next.js application with an integrated Express backend, task pipelines, and direct Credo-TS integration. It is the maintained production baseline for Ayra CTS.
+This package is the Conformance Stack: a monolithic Next.js application with an integrated Express backend, task pipelines, and direct Credo-TS integration. It is the maintained production baseline for Ayra CTS.
 
 **Current coverage**
 - ✅ TRQP trust registry checks
@@ -46,7 +46,7 @@ This package is the Certification-Simple stack: a monolithic Next.js application
 
 ### **Installation & Setup**
 ```bash
-# From the certification-simple root directory
+# From the conformance-stack root directory
 cd packages/cts
 
 # Install dependencies
@@ -259,7 +259,7 @@ socket.on('invitation', (url) => {
 
 ### **Environment Variables**
 
-Set these values in `certification-simple/.env` (preferred) or export them in your shell before running docker compose/npm scripts:
+Set these values in `conformance-stack/.env` (preferred) or export them in your shell before running docker compose/npm scripts:
 
 ```bash
 # Required
@@ -431,7 +431,7 @@ socket.on('dag-state-update', (data) => {
 ```bash
 # Fork and clone repository
 git clone <your-fork>
-cd certification-simple/packages/cts
+cd conformance-stack/packages/cts
 
 # Install dependencies
 pnpm install

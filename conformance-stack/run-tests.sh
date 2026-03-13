@@ -143,7 +143,7 @@ cleanup() {
     docker-compose down --volumes --remove-orphans
     
     # Remove images if they exist
-    docker rmi certification-simple_server certification-simple_ui certification-simple_test-verifier 2>/dev/null || true
+    docker rmi conformance-stack_server conformance-stack_ui conformance-stack_test-verifier 2>/dev/null || true
     
     print_color "✅ Cleanup completed" "$GREEN"
 }

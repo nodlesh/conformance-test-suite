@@ -124,7 +124,7 @@ npm run test-integration
 ```bash
 # Check network
 docker network ls
-docker network inspect certification-simple_cts-network
+docker network inspect conformance-stack_cts-network
 
 # Check service logs
 docker-compose logs server

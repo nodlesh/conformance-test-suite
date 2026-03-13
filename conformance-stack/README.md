@@ -1,6 +1,6 @@
-# Ayra Conformance Test Suite - `certification-simple`
+# Ayra Conformance Test Suite - `conformance-stack`
 
-`certification-simple` is the primary CTS runtime stack (Next.js UI + Express API + test pipelines).
+`conformance-stack` is the primary CTS runtime stack (Next.js UI + Express API + test pipelines).
 
 Coverage and capability status are maintained in the root README: `../README.md`.
 
@@ -41,4 +41,10 @@ When using DID:web issuance, start with NGROK profile and ensure DID env values 
 
 ```bash
 COMPOSE_PROFILES=with-ngrok docker compose up --build app ngrok acapy-control acapy-holder-control acapy-verifier-control
+```
+
+When finished, tear it down with the same profile so the profile-scoped `ngrok` container is removed:
+
+```bash
+COMPOSE_PROFILES=with-ngrok docker compose down -v
 ```
