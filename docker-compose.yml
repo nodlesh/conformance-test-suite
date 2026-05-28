@@ -6,11 +6,19 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ./:/workspaces/conformance-test-suite:cached
+      - ./conformance-stack/logs:/logs
+      - ./scripts:/scripts:ro
       - pnpm-store:/pnpm
       - node-modules:/workspaces/conformance-test-suite/node_modules
+      - conformance-stack-node-modules:/workspaces/conformance-test-suite/conformance-stack/node_modules
     working_dir: /workspaces/conformance-test-suite/conformance-stack
     #command: bash -lc "corepack enable && pnpm install && pnpm run dev"
-    command: "sleep infinity"
+    command:
+      - /bin/sh
+      - /scripts/log-runner.sh
+      - /logs/dev.log
+      - sleep
+      - infinity
     environment:
       NODE_ENV: development
       PNPM_HOME: /pnpm
@@ -57,14 +65,22 @@ services:
       - acapy-holder-control
     volumes:
       - ./:/workspaces/conformance-test-suite:cached
+      - ./conformance-stack/logs:/logs
+      - ./scripts:/scripts:ro
       - pnpm-store:/pnpm
       - node-modules:/workspaces/conformance-test-suite/node_modules
+      - conformance-stack-node-modules:/workspaces/conformance-test-suite/conformance-stack/node_modules
     working_dir: /workspaces/conformance-test-suite/conformance-stack
-    command: >
-      bash -lc '
+    command:
+      - /bin/sh
+      - /scripts/log-runner.sh
+      - /logs/app.log
+      - bash
+      - -lc
+      - |
         set -euo pipefail
         corepack enable
-        pnpm install
+        CI=true pnpm install --frozen-lockfile
         pnpm --filter @demo/core run build
         pnpm --filter cts-3 run start:server &
         SERVER_PID=$!
@@ -85,9 +101,16 @@ services:
         fi
         pnpm --filter cts-3 dev &
         CLIENT_PID=$!
-        trap "kill $SERVER_PID $CLIENT_PID" EXIT
-        wait
-      '
+        cleanup() {
+          kill $$SERVER_PID $$CLIENT_PID 2>/dev/null || true
+        }
+        trap cleanup EXIT INT TERM
+        wait -n $$SERVER_PID $$CLIENT_PID
+        EXIT_CODE=$$?
+        cleanup
+        wait $$SERVER_PID 2>/dev/null || true
+        wait $$CLIENT_PID 2>/dev/null || true
+        exit $$EXIT_CODE
     environment:
       NODE_ENV: development
       PNPM_HOME: /pnpm
@@ -142,6 +165,8 @@ services:
     volumes:
       # TEMP: expose local Ayra context until hosted at a stable URL
       - ./conformance-stack/packages/cts/schema:/app/schema:ro
+      - ./conformance-stack/logs:/logs
+      - ./scripts:/scripts:ro
     ports:
       - "9001:9001"
       - "8041:8041"
@@ -167,6 +192,9 @@ services:
       NEXT_PUBLIC_DID_RESOLVER_URL: ${NEXT_PUBLIC_DID_RESOLVER_URL:-https://dev.uniresolver.io/1.0/identifiers}
     command:
       [
+        "/bin/sh",
+        "/scripts/log-runner.sh",
+        "/logs/acapy-control.log",
         "uvicorn",
         "app.main:app",
         "--host",
@@ -175,7 +203,7 @@ services:
         "9001",
         "--log-level",
         "${UVICORN_LOG_LEVEL:-info}",
-        "--access-log",
+        "--access-log"
       ]
 
   acapy-holder-control:
@@ -184,6 +212,8 @@ services:
     volumes:
       # TEMP: expose local Ayra context until hosted at a stable URL
       - ./conformance-stack/packages/cts/schema:/app/schema:ro
+      - ./conformance-stack/logs:/logs
+      - ./scripts:/scripts:ro
     ports:
       - "9003:9003"
       - "8043:8043"
@@ -204,6 +234,9 @@ services:
       NEXT_PUBLIC_DID_RESOLVER_URL: ${NEXT_PUBLIC_DID_RESOLVER_URL:-https://dev.uniresolver.io/1.0/identifiers}
     command:
       [
+        "/bin/sh",
+        "/scripts/log-runner.sh",
+        "/logs/acapy-holder-control.log",
         "uvicorn",
         "app.main:app",
         "--host",
@@ -212,7 +245,7 @@ services:
         "9003",
         "--log-level",
         "${UVICORN_LOG_LEVEL:-info}",
-        "--access-log",
+        "--access-log"
       ]
 
   acapy-verifier-control:
@@ -221,6 +254,8 @@ services:
     volumes:
       # TEMP: expose local Ayra context until hosted at a stable URL
       - ./conformance-stack/packages/cts/schema:/app/schema:ro
+      - ./conformance-stack/logs:/logs
+      - ./scripts:/scripts:ro
     ports:
       - "9010:9010"
       - "8142:8042"
@@ -241,6 +276,9 @@ services:
       NEXT_PUBLIC_DID_RESOLVER_URL: ${NEXT_PUBLIC_DID_RESOLVER_URL:-https://dev.uniresolver.io/1.0/identifiers}
     command:
       [
+        "/bin/sh",
+        "/scripts/log-runner.sh",
+        "/logs/acapy-verifier-control.log",
         "uvicorn",
         "app.main:app",
         "--host",
@@ -249,13 +287,16 @@ services:
         "9010",
         "--log-level",
         "${UVICORN_LOG_LEVEL:-info}",
-        "--access-log",
+        "--access-log"
       ]
 
   acapy-ngrok:
     image: ngrok/ngrok:alpine
     depends_on:
       - acapy-control
+    volumes:
+      - ./conformance-stack/logs:/logs
+      - ./scripts:/scripts:ro
     environment:
       NGROK_AUTHTOKEN: ${NGROK_AUTH_TOKEN:-}
       REFERENCE_AGENT_NGROK_DOMAIN: ${REFERENCE_AGENT_NGROK_DOMAIN:-${ISSUER_NGROK_DOMAIN:-}}
@@ -264,9 +305,12 @@ services:
     entrypoint: []
     command:
       - /bin/sh
+      - /scripts/log-runner.sh
+      - /logs/acapy-ngrok.log
+      - /bin/sh
       - -c
       - |
-        set -euo pipefail
+        set -eu
         REF_DOMAIN="$${REFERENCE_AGENT_NGROK_DOMAIN}"
         if [ -z "$$REF_DOMAIN" ]; then
           REF_DOMAIN="$${ISSUER_NGROK_DOMAIN}"
@@ -275,16 +319,32 @@ services:
           echo 'REFERENCE_AGENT_NGROK_DOMAIN (or ISSUER_NGROK_DOMAIN) must be set (e.g. reference-xxx.ngrok.app)' >&2
           exit 1
         fi
-        exec ngrok http --region="$${NGROK_REGION}" --domain="$$REF_DOMAIN" http://acapy-control:8041
+        exec ngrok http --region="$${NGROK_REGION}" --url="$$REF_DOMAIN" http://acapy-control:8041
 
   # Optional sidecar if you want ngrok in a container (otherwise the app can open its own tunnel)
   ngrok:
     image: ngrok/ngrok:alpine
+    volumes:
+      - ./conformance-stack/logs:/logs
+      - ./scripts:/scripts:ro
     environment:
       NGROK_AUTHTOKEN: ${NGROK_AUTH_TOKEN}
       DID_WEB_NGROK_DOMAIN: ${DID_WEB_NGROK_DOMAIN:-}
       SERVER_NGROK_DOMAIN: ${SERVER_NGROK_DOMAIN:-}
-    command: http --domain=${DID_WEB_NGROK_DOMAIN:-${SERVER_NGROK_DOMAIN:-auto}} http://app:5005
+    entrypoint: []
+    command:
+      - /bin/sh
+      - /scripts/log-runner.sh
+      - /logs/ngrok.log
+      - /bin/sh
+      - -c
+      - |
+        set -eu
+        NGROK_URL="${DID_WEB_NGROK_DOMAIN:-${SERVER_NGROK_DOMAIN:-}}"
+        if [ -n "$$NGROK_URL" ]; then
+          exec ngrok http --url="$$NGROK_URL" http://app:5005
+        fi
+        exec ngrok http http://app:5005
     depends_on:
       - app
     profiles: ["with-ngrok"]
@@ -292,3 +352,4 @@ services:
 volumes:
   pnpm-store:
   node-modules:
+  conformance-stack-node-modules:
