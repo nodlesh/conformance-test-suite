@@ -123,6 +123,8 @@ export class IssueAyraW3CTask extends BaseRunnableTask {
   private extractCredExId(issued: any): string | undefined {
     const id =
       issued?.cred_ex_id ||
+      issued?.id ||
+      issued?.record?.id ||
       issued?.cred_ex_record?.cred_ex_id ||
       issued?.credential_exchange_id ||
       issued?.credential_exchange?.credential_exchange_id ||
@@ -335,11 +337,11 @@ export class IssueAyraW3CTask extends BaseRunnableTask {
     if (!adapter) {
       throw new Error("Holder adapter not available to create did:key");
     }
-    const adapterType = (adapter as any).constructor ? (adapter as any).constructor.name : typeof adapter;
-    if (!(adapter instanceof AcaPyAgentAdapter) && adapterType !== "AcaPyAgentAdapter") {
-      throw new Error("Holder adapter is not ACA-Py; cannot create did:key");
+    const createDidKey = (adapter as any).createDidKey;
+    if (typeof createDidKey !== "function") {
+      throw new Error("Holder adapter does not support did:key creation");
     }
-    const did = await (adapter as AcaPyAgentAdapter).createDidKey("ed25519");
+    const did = await createDidKey.call(adapter, "ed25519");
     if (!did || !did.startsWith("did:key:")) {
       throw new Error(`Holder did:key creation failed (got: ${did || "empty"})`);
     }
@@ -355,15 +357,19 @@ export class IssueAyraW3CTask extends BaseRunnableTask {
       const adapter = this.controller.getAdapter() as any;
       const adapterType = adapter && adapter.constructor ? adapter.constructor.name : typeof adapter;
       const isAcaPy = adapter && (adapter instanceof AcaPyAgentAdapter || adapterType === "AcaPyAgentAdapter");
-      if (!isAcaPy) {
-        throw new Error("W3C issuance requires ACA-Py adapter");
+      const canCreateDid = typeof adapter?.createDid === "function";
+      const canIssueLdProofCredential = typeof adapter?.issueLdProofCredential === "function";
+      if (!canCreateDid || !canIssueLdProofCredential) {
+        throw new Error(
+          `W3C issuance requires adapter methods createDid + issueLdProofCredential (adapter=${adapterType})`
+        );
       }
       if (!connectionRecord?.id) {
         throw new Error("Connection id is required to issue credential");
       }
 
-      const adminUrl = (adapter as AcaPyAgentAdapter).getAdminUrl?.();
-      if (!adminUrl) {
+      const adminUrl = isAcaPy ? (adapter as AcaPyAgentAdapter).getAdminUrl?.() : null;
+      if (isAcaPy && !adminUrl) {
         throw new Error("ACA-Py admin URL missing; cannot resolve holder DID for subject");
       }
 
@@ -438,22 +444,33 @@ export class IssueAyraW3CTask extends BaseRunnableTask {
 
       this.credExId = this.extractCredExId(issued);
       if (!this.credExId) {
-        throw new Error("ACA-Py did not return a credential exchange id (cred_ex_id)");
+        throw new Error("Issuer did not return a credential exchange id");
       }
 
-      this.addMessage(`Waiting for issuance to complete (cred_ex_id=${this.credExId})`);
-      const finalRecord = await this.waitForCredentialExchangeDone(adminUrl, this.credExId);
+      let finalRecord: any;
+      if (isAcaPy && adminUrl) {
+        this.addMessage(`Waiting for issuance to complete (cred_ex_id=${this.credExId})`);
+        finalRecord = await this.waitForCredentialExchangeDone(adminUrl, this.credExId);
+      } else {
+        finalRecord = issued?.record || issued;
+      }
+      if (!finalRecord || typeof finalRecord !== "object") {
+        throw new Error("Issuer did not return a final credential exchange record");
+      }
 
       this.credential = finalRecord;
       this.verified = true;
 
       // Use resolved subject DID as fallback in case the credential payload omitted it.
       const issuedSubjectDid = credential?.credentialSubject?.id || subjectDid;
-      const threadId = this.extractThreadId(finalRecord);
-      const connectionId = this.extractConnectionId(finalRecord);
+      const threadId = this.extractThreadId(finalRecord) || this.extractThreadId(issued);
+      const connectionId =
+        this.extractConnectionId(finalRecord) ||
+        this.extractConnectionId(issued) ||
+        connectionRecord.id;
 
       let issueCredentialId = this.extractCredentialId(finalRecord);
-      if (!issueCredentialId) {
+      if (!issueCredentialId && adminUrl) {
         const holderAdminUrl = this.getHolderAdminUrl();
         if (holderAdminUrl) {
           issueCredentialId = await this.findIssueRecordCredentialId(holderAdminUrl, connectionId, threadId);
@@ -471,7 +488,7 @@ export class IssueAyraW3CTask extends BaseRunnableTask {
 
       const holderAdminUrl = this.getHolderAdminUrl();
       const walletRecordId =
-        holderAdminUrl
+        holderAdminUrl && adminUrl
           ? await this.findIssuedWalletRecordId(holderAdminUrl, issuerDid, issuedSubjectDid)
           : undefined;
       if (walletRecordId) {

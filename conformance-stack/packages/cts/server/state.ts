@@ -225,10 +225,9 @@ export const selectPipeline = (type: PipelineType): Pipeline => {
         );
 
         if (selectedFormat === "w3c") {
-          if (effectiveIssuerType !== "acapy" || !isAcaPyIssuerAdapter) {
+          if (!issuerAdapter) {
             throw new Error(
-              `[STATE] W3C issuance requires an ACA-Py issuer controller, but issuerAgentType=${effectiveIssuerType} issuerAdapter=${issuerAdapterType}. ` +
-                "Set REFERENCE_AGENT=acapy (or REFERENCE_ISSUER_OVERRIDE_AGENT=acapy) to use the ACA-Py VC-API issuer."
+              `[STATE] W3C issuance requires an initialized issuer controller, but issuerAgentType=${effectiveIssuerType} issuerAdapter=${issuerAdapterType}.`
             );
           }
           const { IssueAcaPyW3CPipeline } = require("./pipelines");

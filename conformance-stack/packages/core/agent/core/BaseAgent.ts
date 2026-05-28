@@ -6,17 +6,12 @@ import {
   CredentialsModule,
   DidsModule,
   DifPresentationExchangeProofFormatService,
+  JsonLdCredentialFormatService,
   ProofsModule,
   V2CredentialProtocol,
   V2ProofProtocol,
   OutOfBandModule,
 } from "@credo-ts/core";
-import {
-  CheqdDidRegistrar,
-  CheqdDidResolver,
-  CheqdModule,
-  CheqdModuleConfig,
-} from "@credo-ts/cheqd";
 import type { ConnectionRecord } from "@credo-ts/core";
 import { indyVdr } from "@hyperledger/indy-vdr-nodejs";
 
@@ -183,6 +178,7 @@ export class BaseAgent {
         autoAcceptConnections: true,
       }),
       credentials: new CredentialsModule({
+        autoAcceptCredentials: AutoAcceptCredential.Always,
         credentialProtocols: [
           new V1CredentialProtocol({
             indyCredentialFormat: new LegacyIndyCredentialFormatService(),
@@ -191,6 +187,7 @@ export class BaseAgent {
             credentialFormats: [
               new LegacyIndyCredentialFormatService(),
               new AnonCredsCredentialFormatService(),
+              new JsonLdCredentialFormatService(),
             ],
           }),
         ],
@@ -199,21 +196,10 @@ export class BaseAgent {
         indyVdr,
         networks: [indyNetworkConfig],
       }),
-      cheqd: new CheqdModule(
-        new CheqdModuleConfig({
-          networks: [
-            {
-              network: "testnet",
-              cosmosPayerSeed:
-                "robust across amount corn curve panther opera wish toe ring bleak empower wreck party abstract glad average muffin picnic jar squeeze annual long aunt",
-            },
-          ],
-        })
-      ),
       outOfBand: new OutOfBandModule(),
       dids: new DidsModule({
-        registrars: [new IndyVdrIndyDidRegistrar(), new CheqdDidRegistrar()],
-        resolvers: [new IndyVdrIndyDidResolver(), new CheqdDidResolver()],
+        registrars: [new IndyVdrIndyDidRegistrar()],
+        resolvers: [new IndyVdrIndyDidResolver()],
       }),
       proofs: new ProofsModule({
         autoAcceptProofs: AutoAcceptProof.ContentApproved,

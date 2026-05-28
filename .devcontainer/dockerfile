@@ -2,7 +2,7 @@
 FROM mcr.microsoft.com/devcontainers/base:ubuntu
 
 RUN apt-get update && \
-    apt-get install -y git bash ca-certificates curl && \
+    apt-get install -y git bash ca-certificates curl build-essential python3 make g++ && \
     curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
     apt-get install -y nodejs && \
     npm install -g corepack && \

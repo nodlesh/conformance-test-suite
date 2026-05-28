@@ -160,7 +160,7 @@ export class ProposeProofTask extends BaseRunnableTask {
   ) {
     const observable = agent.events.observable<ProofStateChangedEvent>(
       ProofEventTypes.ProofStateChanged
-    );
+    ) as unknown as Observable<BaseEvent>;
 
     return this.waitForProofExchangeRecordSubject2(observable, options);
   }

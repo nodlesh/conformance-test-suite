@@ -80,6 +80,42 @@ export class CredoAgentAdapter implements AgentAdapter {
     return this.agent.config?.label ?? "Credo Reference Agent";
   }
 
+  async createDid(
+    method: string,
+    keyType: "ed25519" | "bls12381g2" = "ed25519",
+    options: Record<string, unknown> = {}
+  ): Promise<string> {
+    if (method !== "key") {
+      throw new Error(
+        `Credo adapter supports only did:key issuance on this branch (received method=${method})`
+      );
+    }
+
+    const requestedKeyType =
+      (typeof (options as any)?.keyType === "string" && (options as any).keyType) ||
+      (typeof (options as any)?.key_type === "string" && (options as any).key_type) ||
+      keyType;
+
+    return this.createDidKey(requestedKeyType as "ed25519" | "bls12381g2");
+  }
+
+  async createDidKey(keyType: "ed25519" | "bls12381g2" = "ed25519"): Promise<string> {
+    const result: any = await this.agent.agent.dids.create({
+      method: "key",
+      options: {
+        keyType,
+      },
+    } as any);
+    const did =
+      result?.did ||
+      result?.didState?.did ||
+      result?.didDocumentMetadata?.equivalentId?.[0];
+    if (typeof did !== "string" || !did.startsWith("did:key:")) {
+      throw new Error(`Credo did:key creation failed (got: ${String(did || "empty")})`);
+    }
+    return did;
+  }
+
   async createOutOfBandInvitation(): Promise<ControllerInvitation> {
     const record = await this.agent.agent.oob.createInvitation({
       autoAcceptConnection: true,
@@ -202,6 +238,77 @@ export class CredoAgentAdapter implements AgentAdapter {
     });
 
     return;
+  }
+
+  async issueLdProofCredential(payload: any): Promise<any> {
+    const connectionId = payload?.connection_id || payload?.connectionId;
+    const ldProof = payload?.filter?.ld_proof;
+    const credential = ldProof?.credential;
+    const options = ldProof?.options || {};
+    const verificationMethod = options?.verificationMethod;
+    const proofType = options?.proofType || "Ed25519Signature2020";
+    const proofPurpose = options?.proofPurpose || "assertionMethod";
+
+    if (!connectionId) {
+      throw new Error("connection_id is required to issue a JSON-LD credential with Credo");
+    }
+    if (!credential || typeof credential !== "object") {
+      throw new Error("filter.ld_proof.credential is required to issue a JSON-LD credential with Credo");
+    }
+    if (!verificationMethod || typeof verificationMethod !== "string") {
+      throw new Error(
+        "filter.ld_proof.options.verificationMethod is required to issue a JSON-LD credential with Credo"
+      );
+    }
+
+    const offerState = await (this.agent.agent.credentials.offerCredential as any)({
+      connectionId,
+      protocolVersion: "v2",
+      comment: typeof payload?.comment === "string" ? payload.comment : undefined,
+      credentialFormats: {
+        jsonld: {
+          credential,
+          options: {
+            proofType,
+            proofPurpose,
+          },
+        },
+      },
+    });
+
+    const requestRecord = await this.waitForCredentialRecordOrQuery({
+      threadId: offerState.threadId,
+      state: CredentialState.RequestReceived,
+      timeoutMs: 120000,
+    });
+
+    await (this.agent.agent.credentials.acceptRequest as any)({
+      credentialRecordId: requestRecord.id,
+      credentialFormats: {
+        jsonld: {
+          verificationMethod,
+        },
+      },
+      autoAcceptCredential: AutoAcceptCredential.Always,
+    });
+
+    const finalRecord = await this.waitForCredentialRecordOrQuery({
+      threadId: offerState.threadId,
+      state: CredentialState.Done,
+      timeoutMs: 120000,
+    });
+    const formatData = await this.agent.agent.credentials
+      .getFormatData(finalRecord.id)
+      .catch(() => undefined as any);
+
+    return {
+      cred_ex_id: finalRecord.id,
+      credential_exchange_id: finalRecord.id,
+      thread_id: finalRecord.threadId,
+      connection_id: finalRecord.connectionId,
+      record: finalRecord,
+      credential: formatData?.credential?.jsonld,
+    };
   }
 
   async issueCredential(payload: CredentialOfferPayload): Promise<CredentialOfferResult> {
@@ -372,7 +479,7 @@ export class CredoAgentAdapter implements AgentAdapter {
   }): Promise<any> {
     const observable = this.agent.agent.events.observable<ProofStateChangedEvent>(
       ProofEventTypes.ProofStateChanged
-    );
+    ) as unknown as Observable<any>;
 
     return this.waitForProofExchangeRecordSubject(observable, options);
   }
@@ -444,7 +551,7 @@ export class CredoAgentAdapter implements AgentAdapter {
     const observable =
       this.agent.agent.events.observable<CredentialStateChangedEvent>(
         CredentialEventTypes.CredentialStateChanged
-      );
+      ) as unknown as Observable<BaseEvent>;
     return this.waitForCredentialRecordSubject(observable, options);
   }
 
@@ -495,6 +602,44 @@ export class CredoAgentAdapter implements AgentAdapter {
         map((e) => e.payload.credentialRecord)
       )
     );
+  }
+
+  private async waitForCredentialRecordOrQuery(options: {
+    threadId?: string;
+    state?: CredentialState;
+    previousState?: CredentialState | null;
+    timeoutMs?: number;
+  }) {
+    try {
+      return await this.waitForCredentialRecord(options);
+    } catch (eventError) {
+      const timeoutMs = options.timeoutMs ?? 15000;
+      const deadline = Date.now() + timeoutMs;
+
+      while (Date.now() < deadline) {
+        const records = await this.agent.agent.credentials.findAllByQuery({
+          ...(options.threadId ? { threadId: options.threadId } : {}),
+        } as any);
+        const match = records.find((record: any) => {
+          if (options.previousState !== undefined && record?.previousState !== options.previousState) {
+            return false;
+          }
+          if (options.threadId !== undefined && record?.threadId !== options.threadId) {
+            return false;
+          }
+          if (options.state !== undefined && record?.state !== options.state) {
+            return false;
+          }
+          return true;
+        });
+        if (match) {
+          return match;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
+
+      throw eventError;
+    }
   }
 
   private async waitForLedgerSchema(
